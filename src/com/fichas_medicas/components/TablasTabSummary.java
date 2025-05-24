@@ -28,61 +28,52 @@ public class TablasTabSummary {
     
 
 public void getTabSummary(List<FichaMedica> lista1, JTable tabla) {
-    // Ancho de las columnas
-    int a[] = {40, 80,150};
-    String columna[] = {"#", "Fecha", "Antecedentes patologicos Familiares"};
-    
-    // Renderizador para centrar el texto de las celdas
-    var tcr = new DefaultTableCellRenderer();
-    tcr.setHorizontalAlignment(SwingConstants.CENTER);  // Centrar contenido de las celdas
-    
-    // Modelo de tabla
-    modelo = new DefaultTableModel(columna, 0);
-    
-    // Rellenar la tabla con los datos de la lista
-    String filas[] = new String[3];
-    modelo = new DefaultTableModel(null, columna);
-    
+    int[] anchoColumnas = {40, 80, 150};
+    String[] columnas = {"#", "Fecha", "Antecedentes Patológicos Personales"};
+
+    // Crear modelo
+    modelo = new DefaultTableModel(columnas, 0);
+
+    // Llenar datos
     for (int i = 0; i < lista1.size(); i++) {
-        filas[0] = "" + (i + 1);
-        filas[1] = FechaComponente.getStringFecha(lista1.get(i).getFecha_registro());
-              //  lista1.get(i).getFecha_registro().toString();
-        filas[2] = lista1.get(i).getAnt_patologicos_fam();
-        modelo.addRow(filas);                        
+        String[] fila = new String[3];
+        fila[0] = lista1.get(i).getId_fichaMedica()+"";
+        fila[1] = FechaComponente.getStringFecha(lista1.get(i).getFecha_registro());
+        fila[2] = lista1.get(i).getAnt_patologicos_per();
+        modelo.addRow(fila);
     }
-    
+
     tabla.setModel(modelo);
-    
-    // Ajustar el ancho de las columnas
-    for (int i = 0; i < columna.length; i++) {
-        tabla.getColumnModel().getColumn(i).setPreferredWidth(a[i]);
-        tabla.getColumnModel().getColumn(i).setCellRenderer(tcr);
-    }
-    
-    // Establecer el alto de las filas
-    tabla.setRowHeight(30);  // Aquí puedes ajustar el valor según sea necesario
-    
-    // Cambiar la fuente del contenido de las celdas
-    Font font = new Font("Arial", Font.PLAIN, 13);  // Fuente y tamaño
-    tabla.setFont(font);  // Aplica la fuente a todas las celdas
-    
-    // Centrar los nombres de las columnas (cabecera)
+
+    // Ajustes visuales
+    tabla.setRowHeight(30);
+    tabla.setFont(new Font("Arial", Font.PLAIN, 13));
+
     JTableHeader header = tabla.getTableHeader();
+    header.setFont(new Font("Arial", Font.BOLD, 15));
     DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) header.getDefaultRenderer();
-    headerRenderer.setHorizontalAlignment(SwingConstants.CENTER);  // Centra los títulos de las columnas
-    
-    // Cambiar la fuente de los encabezados
-    header.setFont(new Font("Arial", Font.BOLD, 15));  // Fuente y tamaño para los encabezados
-    
-    // Mostrar las líneas de la cuadrícula
+    headerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+
+    DefaultTableCellRenderer centrado = new DefaultTableCellRenderer();
+    centrado.setHorizontalAlignment(SwingConstants.CENTER);
+
+    for (int i = 0; i < columnas.length; i++) {
+        tabla.getColumnModel().getColumn(i).setPreferredWidth(anchoColumnas[i]);
+        tabla.getColumnModel().getColumn(i).setCellRenderer(centrado);
+    }
+
     tabla.setShowGrid(true);
 }
 
 
+
     
-    public void filter (String valor, JTable tabla){
-        TableRowSorter<DefaultTableModel> tr = new TableRowSorter<DefaultTableModel>(modelo);
+public void filter(String valor, JTable tabla) {
+    if (tabla.getModel() instanceof DefaultTableModel m) {
+        TableRowSorter<DefaultTableModel> tr = new TableRowSorter<>(m);
         tabla.setRowSorter(tr);
         tr.setRowFilter(RowFilter.regexFilter("(?i)" + valor));
     }
+}
+
 }

@@ -85,7 +85,7 @@ public class CrudExamen implements ExamenDAO {
                 + "saturacion = ?, peso_kg = ?, estatura_cm = ?, temperatura = ?, imc = ?, "
                 + "estado_actual = ?, habitos = ?,condiciones_fisicas = ? "
                 + "WHERE id_examen = ?";
-
+        System.out.println(" CRUD EXAMEN : "+obj.getIdExamen());
         try (
                 Connection conect = this.conexion.conectar(base); PreparedStatement st = conect.prepareStatement(query)) {
             st.setInt(1, obj.getFrecuenciaCardiaca());
@@ -224,9 +224,8 @@ public class CrudExamen implements ExamenDAO {
     public void setId_examen(int id_examen) {
         this.id_examen = id_examen;
     }
-    
-    
-     public Examen getOneByIdFicha(Integer id_ficha) {
+
+    public Examen getOneByIdFicha(Integer id_ficha) {
         String query = "SELECT * FROM examen WHERE id_ficha_medica = ? and estado='A'";
         Examen examen = null;
 
@@ -261,6 +260,44 @@ public class CrudExamen implements ExamenDAO {
         }
 
         return examen;
+    }
+
+    public List<Examen> getAllByIdFicha(Integer id_ficha) {
+        String query = "SELECT * FROM examen WHERE id_ficha_medica = ? AND estado = 'A'";
+        List<Examen> examenes = new ArrayList<>();
+
+        try (
+                Connection conect = this.conexion.conectar(base); PreparedStatement st = conect.prepareStatement(query)) {
+            st.setInt(1, id_ficha);
+
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    Examen examen = new Examen(
+                            rs.getInt("id_examen"),
+                            rs.getString("id_persona"),
+                            rs.getInt("id_ficha_medica"),
+                            rs.getDate("fecha_registro"),
+                            rs.getInt("frecuencia_cardiaca"),
+                            rs.getInt("sistolica"),
+                            rs.getInt("diastolica"),
+                            rs.getInt("saturacion"),
+                            rs.getDouble("peso_kg"),
+                            rs.getDouble("estatura_cm"),
+                            rs.getDouble("temperatura"),
+                            rs.getDouble("imc"),
+                            rs.getString("estado_actual"),
+                            rs.getString("habitos"),
+                            rs.getString("condiciones_fisicas"),
+                            rs.getString("estado")
+                    );
+                    examenes.add(examen);
+                }
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(CrudExamen.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return examenes;
     }
 
 }

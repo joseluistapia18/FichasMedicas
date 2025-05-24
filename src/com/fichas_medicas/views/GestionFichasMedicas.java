@@ -8,10 +8,12 @@ import com.fichas_medicas.components.Tablas;
 import com.fichas_medicas.components.TablasFichas;
 import com.fichas_medicas.dao.CrudFichaMedica;
 import com.fichas_medicas.dao.CrudUsuario;
+import com.fichas_medicas.domain.Examen;
 import com.fichas_medicas.domain.FichaMedica;
 import com.fichas_medicas.domain.Usuario;
 import java.util.List;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -32,6 +34,8 @@ public class GestionFichasMedicas extends javax.swing.JDialog {
         super(parent, modal);
         initComponents();
         setLocationRelativeTo(null);
+        this.objU = new Usuario("JTAPIA", "4444", "JOSE", "LINO", "lino@gmail.com", 3, "SOFIA24", "A");
+
         tbl = new TablasFichas();
         crudF = new CrudFichaMedica();
         lista = crudF.getAll();
@@ -231,23 +235,27 @@ public class GestionFichasMedicas extends javax.swing.JDialog {
 
     private void tablaMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tablaMousePressed
         // TODO add your handling code here:
-        var fila = 0;
         try {
             if (evt.getClickCount() == 2) {
-                fila = tabla.getSelectedRow();
-                var obj = getObject(tabla.getValueAt(fila, 2).toString(), lista);
-                if (obj != null) {
-                    System.out.println(obj.getId_persona() + " ");
-                    var ob = new EditarFichas(new JFrame(), true,obj, objU );
-                    ob.setVisible(true);
-                    lista = crudF.getAll();
-                    tbl.cargarFichas(lista, tabla);
-                    filtro.setText("");
-                    tbl.filter("", tabla);
+                int fila = tabla.getSelectedRow();
+                if (fila != -1) {
+                    // Supongamos que la columna 0 es el id_ficha_medica
+                    Integer idFicha = Integer.parseInt(tabla.getValueAt(fila, 0).toString());
+
+                    FichaMedica obj = getObjectByIdFicha(idFicha, lista); // ← usa ID de ficha
+                    if (obj != null) {
+                        System.out.println("Cargar ficha con ID: " + obj.getId_fichaMedica());
+                        var ob = new EditarFichas(new JFrame(), true, obj, objU);
+                        ob.setVisible(true);
+                        lista = crudF.getAll();
+                        tbl.cargarFichas(lista, tabla);
+                        filtro.setText("");
+                        tbl.filter("", tabla);
+                    }
                 }
             }
-
         } catch (Exception e) {
+            e.printStackTrace();
         }
 
     }//GEN-LAST:event_tablaMousePressed
@@ -268,15 +276,13 @@ public class GestionFichasMedicas extends javax.swing.JDialog {
     private void imprimir2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_imprimir2ActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_imprimir2ActionPerformed
-    private FichaMedica getObject(String id_persona, List<FichaMedica> lista) {
-        FichaMedica obj = null;
-        for (int i = 0; i < lista.size(); i++) {
-            if (id_persona.equals(lista.get(i).getId_persona())) {
-                obj = lista.get(i);
-                break;
+    private FichaMedica getObjectByIdFicha(Integer idFicha, List<FichaMedica> lista) {
+        for (FichaMedica f : lista) {
+            if (f.getId_fichaMedica() == idFicha) {
+                return f;
             }
         }
-        return obj;
+        return null;
     }
 
     /**

@@ -89,6 +89,7 @@ public class EditarFichas extends javax.swing.JDialog {
     private Persona grb_objP;
     private FichaMedica grb_objF;
     private Examen grb_objE;
+    public Examen prb_objEx;
     private FichaMedica fillObjFM;
 
     /**
@@ -113,7 +114,7 @@ public class EditarFichas extends javax.swing.JDialog {
         crudEcl = new CrudEstadoCivil();
         crudCo = new CrudCorreo();
         crudGrupo = new CrudGrupoSanguineo();
-        System.out.println("lista " + areas.size());
+        //System.out.println("lista " + areas.size());
         fillAreas();
         fillEstadoCivil();
         fillCorreo();
@@ -132,7 +133,7 @@ public class EditarFichas extends javax.swing.JDialog {
         setLocationRelativeTo(null);
         setSize(797, 685);
         this.objU = obj;
-        System.out.println("Usuario Modulo Fichas " + objU.getUsuario());
+        //System.out.println("Usuario Modulo Fichas " + objU.getUsuario());
         cargarImagen();
         crudA = new CrudArea();
         areas = crudA.getAll();
@@ -144,7 +145,7 @@ public class EditarFichas extends javax.swing.JDialog {
         crudEcl = new CrudEstadoCivil();
         crudCo = new CrudCorreo();
         crudGrupo = new CrudGrupoSanguineo();
-        System.out.println("lista " + areas.size());
+        //System.out.println("lista " + areas.size());
         fillAreas();
         fillEstadoCivil();
         fillCorreo();
@@ -161,42 +162,84 @@ public class EditarFichas extends javax.swing.JDialog {
         initComponents();
         setLocationRelativeTo(null);
         setSize(797, 685);
+
         this.objU = obj;
         this.fillObjFM = objFM;
-        System.out.println("hhh  " + objFM.getId_persona());
-        System.out.println("ID FICHA pilas " + fillObjFM.getId_fichaMedica() + " " + fillObjFM.getId_persona());
-        System.out.println("Usuario Modulo Fichas " + this.fillObjFM.getId_persona());
-        //cargarImagen();
+
+        // ID de ficha médica a actualizar
+        frk_id_ficha_medica_grb = objFM.getId_fichaMedica();
+        System.out.println("FICHA MEDICA REVISION: " + frk_id_ficha_medica_grb);
+
+        // Instanciar CRUDs y cargar catálogos
         crudA = new CrudArea();
-        areas = crudA.getAll();
-        // grabar
         crudP = new CrudPersona();
         crudFM = new CrudFichaMedica();
         crudEx = new CrudExamen();
-        //
         crudEcl = new CrudEstadoCivil();
         crudCo = new CrudCorreo();
         crudGrupo = new CrudGrupoSanguineo();
-        System.out.println("lista " + areas.size());
+
+        areas = crudA.getAll();
         fillAreas();
         fillEstadoCivil();
         fillCorreo();
         fillGrupoSanguineo();
-        //System.out.println("fillData Editar Ficha:" + objFM.getId_persona());
 
-        fillData(objFM);
+        // Obtener examen asociado a la ficha médica
+        var obExa = crudEx.getOneByIdFicha(objFM.getId_fichaMedica());
+
+        if (obExa == null) {
+            System.out.println("⚠️ Esta ficha no tiene examen registrado todavía.");
+            obExa = new Examen();
+            obExa.setId_ficha_medica(objFM.getId_fichaMedica());
+            obExa.setIdPersona(objFM.getId_persona());
+            obExa.setFechaRegistro((Date) FechaComponente.FechaSql());
+            obExa.setEstado("A");
+
+            // Inicializar con valores por defecto para evitar NullPointer
+            obExa.setFrecuenciaCardiaca(0);
+            obExa.setSistolica(0);
+            obExa.setDiastolica(0);
+            obExa.setSaturacion(0);
+            obExa.setPesoKg(0.0);
+            obExa.setEstaturaCm(0.0);
+            obExa.setTemperatura(0.0);
+            obExa.setImc(0.0);
+            obExa.setEstadoActual("");
+            obExa.setHabitos("");
+            obExa.setCondiciones_fisicas("");
+
+            frk_id_examen_upd = -1;
+        } else {
+            System.out.println("✔ Examen encontrado: ID " + obExa.getIdExamen());
+            frk_id_examen_upd = obExa.getIdExamen();
+        }
+
+        this.prb_objEx = obExa;
+
+        // Llenar los datos en el formulario
+        fillData(objFM, obExa);
+
+        // Inicializar tabla resumen de fichas
+        this.tblF = new TablasTabSummary();
+        var lista_fichas1 = this.crudFM.getAllTabSummary(objFM.getId_persona());
+
+        if (lista_fichas1 != null && !lista_fichas1.isEmpty()) {
+            tblF.getTabSummary(lista_fichas1, tabla);
+        } else {
+            System.out.println("No hay fichas adicionales para mostrar.");
+        }
+
         TXT_CEDULA.setEditable(false);
-        //activar(false);
-        //antecedentes.setEnabledAt(1, false);
-        ///antecedentes.setEnabledAt(2, false);
     }
 
-    private void fillData(FichaMedica obj) {
-        System.out.println("fillData Editar Ficha:" + obj.getId_persona());
+    private void fillData(FichaMedica obj, Examen obEx) {
+        //     System.out.println("fillData Editar Ficha:" + obj.getId_persona());
         TXT_CEDULA.setText(obj.getId_persona());
         var objPer = crudP.getOne(obj.getId_persona());
         TXT_NOMBRE.setText(objPer.getNombre());
         TXT_APELLIDO.setText(objPer.getApellidos());
+        //TXT_F_NACIMIENTO
         TXT_L_NACIMIENTO.setText(objPer.getLugar_nacimiento());
         TXT_N_HIJOS.setText(objPer.getN_hijos().toString());
         direccion.setText(objPer.getDireccion());
@@ -219,16 +262,17 @@ public class EditarFichas extends javax.swing.JDialog {
         cargarImagen(objP.getFoto());
 //        //  System.out.println("Id_Rol " + objP.getId_area() + " " + resA);
 //        // FICHA
-       TXT_A_P_FAMILIARES.setText(obj.getAnt_patologicos_fam());
+        TXT_A_P_FAMILIARES.setText(obj.getAnt_patologicos_fam());
         TXT_A_P_PERSONALES.setText(obj.getAnt_patologicos_per());
-        System.out.println("Exame "+obj.getId_fichaMedica());
-       var obEx = crudEx.getOneByIdFicha(obj.getId_fichaMedica());
-       
-       TXT_HABITOS.setText(obEx.getHabitos());
+        //     System.out.println("Exame " + obj.getId_fichaMedica());
+        //var obEx = crudEx.getOneByIdFicha(obj.getId_fichaMedica());
+        //this.prb_objEx=null;
+        //     System.out.println("Id valido ficha " + obEx.getId_ficha_medica());
+        TXT_HABITOS.setText(obEx.getHabitos());
         TXT_E_ACTUAL.setText(obEx.getEstadoActual());
         muestra_fecha.setText(FechaComponente.getStringFecha(obEx.getFechaRegistro()));
         // EXAMEN
-        TEMPERATURA.setText(obEx.getTemperatura()+"");
+        TEMPERATURA.setText(obEx.getTemperatura() + "");
         PESO.setText(obEx.getPesoKg().toString());
         SATURACION.setText(obEx.getSaturacion().toString());
         ESTATURA.setText(obEx.getEstaturaCm().toString());
@@ -237,6 +281,7 @@ public class EditarFichas extends javax.swing.JDialog {
         IMC.setText(obEx.getImc().toString());
         FRECUENCIA_CARDIACA.setText(obEx.getFrecuenciaCardiaca().toString());
         CON_FIS.setText(obEx.getCondiciones_fisicas());
+
     }
 
     private void cargarImagen() {
@@ -1848,11 +1893,11 @@ public class EditarFichas extends javax.swing.JDialog {
 
         var objF = new FichaMedica((Date) FechaComponente.FechaSql(),
                 TXT_CEDULA.getText(),
-                TXT_A_P_FAMILIARES.getText(),
                 TXT_A_P_PERSONALES.getText(),
+                TXT_A_P_FAMILIARES.getText(),
                 objU.getUsuario(), "A");
         // Problemas con fecha de nacikiento
-        System.out.println("Prueba grabar " + objF.toString());
+        System.out.println("Prueba grabar Pepa -->" + objF.toString());
         grb_objF = objF;
     }
 
@@ -1930,11 +1975,11 @@ public class EditarFichas extends javax.swing.JDialog {
         var cld = new GetFecha(new JFrame(), true);
         cld.setVisible(true);
         var fec = cld.getStr_fecha();
-        System.out.println(" fecha frm " + fec);
+        //  System.out.println(" fecha frm " + fec);
         TXT_F_NACIMIENTO.setText(fec);
 
         fecha_nac = (Date) cld.getDt_fecha();
-        System.out.println("fecha grt 1 " + fecha_nac);
+        //    System.out.println("fecha grt 1 " + fecha_nac);
     }//GEN-LAST:event_btn_calActionPerformed
 
     private void correoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_correoActionPerformed
@@ -1953,7 +1998,8 @@ public class EditarFichas extends javax.swing.JDialog {
     private void btn_validar_datosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_validar_datosActionPerformed
         var vali = validarCampos();
         if (vali.length() > 1) {
-            JOptionPane.showMessageDialog(null, vali, "Datos Invalidos", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, vali, "Datos Invalidos",
+                    JOptionPane.INFORMATION_MESSAGE);
             activar(true);
             //gbr_persona = 0;
         } else {
@@ -1971,7 +2017,7 @@ public class EditarFichas extends javax.swing.JDialog {
         var id_area = 0;
         int selectedIndex = area.getSelectedIndex();
         var posA = selectedIndex;
-        System.out.println("posA ->" + posA);
+        //   System.out.println("posA ->" + posA);
         error1 = error1 + "Area\n";
         if (posA > 0) {
             id_area = areas.get(posA - 1).getId_area();
@@ -2563,17 +2609,22 @@ public class EditarFichas extends javax.swing.JDialog {
         vr_peso = Double.valueOf(PESO.getText());
         vr_estatura = Double.valueOf(ESTATURA.getText());
         vr_temperatura = Double.valueOf(TEMPERATURA.getText());
-        Double.valueOf(IMC.getText());
+        vr_imc = Double.valueOf(IMC.getText()); // ✅ AQUÍ estaba el problema
+
         vr_estado_actual = TXT_E_ACTUAL.getText();
         vr_habitos = TXT_HABITOS.getText();
+
         System.out.println(frk_id_examen_upd + " PRUEBA GRABA 1 :" + frk_id_ficha_medica_grb);
         System.out.println("IMC " + vr_imc);
-        Examen objE = new Examen(TXT_CEDULA.getText(), frk_id_ficha_medica_grb, (Date) FechaComponente.FechaSql(),
+
+        Examen objE = new Examen(frk_id_examen_upd,
+                TXT_CEDULA.getText(), frk_id_ficha_medica_grb, (Date) FechaComponente.FechaSql(),
                 vr_frecuencia_cardiaca, vr_sistolica, vr_diastolica,
                 vr_saturacion, vr_peso, vr_estatura, vr_temperatura,
-                vr_imc, vr_estado_actual, vr_habitos, CON_FIS.getText(), "A");
-        // Problemas con fecha de nacikiento
-        System.out.println("Prueba grabar " + objE.toString());
+                vr_imc, vr_estado_actual, vr_habitos, CON_FIS.getText(), "A"
+        );
+
+        System.out.println("Prueba grabar BD-->" + objE.toString());
         grb_objE = objE;
     }
 
@@ -2667,8 +2718,8 @@ public class EditarFichas extends javax.swing.JDialog {
             foto.setIcon(newIcono);
             rutaimagen = dlg.getSelectedFile().getPath();
             rutaimagen = FechaComponente.devuelvePathMsql(dlg.getSelectedFile().getPath());
-            System.out.println("ruta " + rutaimagen);
-            System.out.println(fil + " Foto  " + foto.getWidth() + " " + foto.getHeight());
+            //      System.out.println("ruta " + rutaimagen);
+            //    System.out.println(fil + " Foto  " + foto.getWidth() + " " + foto.getHeight());
         }
 
     }
@@ -2702,8 +2753,8 @@ public class EditarFichas extends javax.swing.JDialog {
                     rutaimagen = FechaComponente.devuelvePathMsql(rutaimagen);  // Procesar la ruta para MySQL (si es necesario)
 
                     // Imprimir información de la imagen
-                    System.out.println("Ruta de la imagen: " + rutaimagen);
-                    System.out.println(fil + " Foto  " + foto.getWidth() + " " + foto.getHeight());
+                    //      System.out.println("Ruta de la imagen: " + rutaimagen);
+                    //       System.out.println(fil + " Foto  " + foto.getWidth() + " " + foto.getHeight());
                 } else {
                     System.out.println("No se pudo cargar la imagen.");
                 }
@@ -2736,7 +2787,7 @@ public class EditarFichas extends javax.swing.JDialog {
                 activar(false);
                 JOptionPane.showMessageDialog(null, "Cedula ya Existe!");
             } else {
-                System.out.println("Cedula disponible!");
+                //           System.out.println("Cedula disponible!");
                 activar(true);
             }
         } else {
@@ -2780,18 +2831,35 @@ public class EditarFichas extends javax.swing.JDialog {
     }
 
     private String updateData() {
-        //System.out.println("ACTUALIZAR FICHA MEDICA ID: " + frk_id_ficha_medica_grb);
+        // Ficha médica: actualizar
         grb_objF.setId_fichaMedica(frk_id_ficha_medica_grb);
-        crudFM.update(grb_objF);  // Actualiza Ficha Médica (DATOS + ANTECEDENTES)
+        System.out.println("GRABAR FICHAS PEPA --> " + grb_objF.getId_fichaMedica());
+        crudFM.update(grb_objF);
+
+        // Examen: insertar o actualizar según corresponda
         grb_objE.setId_ficha_medica(frk_id_ficha_medica_grb);
         grb_objE.setIdExamen(frk_id_examen_upd);
-        //System.out.println("EDITADO  " + grb_objE.getIdExamen());
-        crudEx.update(grb_objE); // Actualiza EXAMEN
-        String msg = "Datos de ficha medica actualizados....";
-        // Refrescar tabla con los datos actualizados
-        lista_fichas = crudFM.getAllTabSummary(TXT_CEDULA.getText());
-        tblF.getTabSummary(lista_fichas, tabla);
-        return msg;
+
+        boolean resultado;
+        if (grb_objE.getIdExamen() == null || grb_objE.getIdExamen() <= 0) {
+            System.out.println("⚠️ Insertando nuevo examen...");
+            resultado = crudEx.save(grb_objE);
+            if (resultado) {
+                // actualiza la variable de control con el nuevo ID
+                frk_id_examen_upd = grb_objE.getIdExamen();
+            }
+        } else {
+            System.out.println("✏️ Actualizando examen ID: " + grb_objE.getIdExamen());
+            resultado = crudEx.update(grb_objE);
+        }
+
+        // Refrescar tabla de resumen
+        var lista_fichas1 = this.crudFM.getAllTabSummary(TXT_CEDULA.getText());
+        if (lista_fichas1 != null) {
+            tblF.getTabSummary(lista_fichas1, tabla);
+        }
+
+        return resultado ? "Datos de ficha médica procesados correctamente." : "Error al guardar examen.";
     }
 
 //     private void updateData() {
