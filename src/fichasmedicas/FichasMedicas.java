@@ -17,6 +17,8 @@ import javax.swing.JFrame;
  */
 public class FichasMedicas {
 
+// nuevo reposistorio 2025
+
     /**
      * SUBIDA DESDE LABORATORIO  FECHA:27-11-2024  HORA:8:23AM
      * REPARACION DE PROYECTO 1-2
