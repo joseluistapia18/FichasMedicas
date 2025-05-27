@@ -89,6 +89,7 @@ public class Fichas extends javax.swing.JDialog {
     private Persona grb_objP;
     private FichaMedica grb_objF;
     private Examen grb_objE;
+    List<String> correos = null;
 
     /**
      * Creates new form Fichas
@@ -108,6 +109,7 @@ public class Fichas extends javax.swing.JDialog {
         crudP = new CrudPersona();
         crudFM = new CrudFichaMedica();
         crudEx = new CrudExamen();
+        correos = new ArrayList<>();
         //
         crudEcl = new CrudEstadoCivil();
         crudCo = new CrudCorreo();
@@ -115,7 +117,10 @@ public class Fichas extends javax.swing.JDialog {
         System.out.println("lista " + areas.size());
         fillAreas();
         fillEstadoCivil();
-        fillCorreo();
+        if (TXT_CEDULA.getText() != null && !TXT_CEDULA.getText().trim().isEmpty()) {
+            fillCorreo(null);
+        }
+
         fillGrupoSanguineo();
         activar(false);
         antecedentes.setEnabledAt(1, false);
@@ -131,6 +136,7 @@ public class Fichas extends javax.swing.JDialog {
         setLocationRelativeTo(null);
         setSize(797, 685);
         this.objU = obj;
+        correos = new ArrayList<>();
         System.out.println("Usuario Modulo Fichas " + objU.getUsuario());
         cargarImagen();
         crudA = new CrudArea();
@@ -146,7 +152,10 @@ public class Fichas extends javax.swing.JDialog {
         System.out.println("lista " + areas.size());
         fillAreas();
         fillEstadoCivil();
-        fillCorreo();
+        if (TXT_CEDULA.getText() != null && !TXT_CEDULA.getText().trim().isEmpty()) {
+            fillCorreo(null);
+        }
+
         fillGrupoSanguineo();
         activar(false);
         antecedentes.setEnabledAt(1, false);
@@ -194,12 +203,28 @@ public class Fichas extends javax.swing.JDialog {
         }
     }
 
-    private void fillCorreo() {
-        lista_correos = crudCo.getPersonMail(TXT_CEDULA.getText());
+    public void cargarPaciente(String cedula) {
+        TXT_CEDULA.setText(cedula);
+        fillCorreo(null);
+        // ...otros datos del paciente
+    }
+
+    private void fillCorreo(String correoSeleccionado) {
+        String cedula = TXT_CEDULA.getText();
+        if (cedula == null || cedula.trim().isEmpty()) {
+            return; // No hay cédula, no hay nada que llenar
+        }
+
+        lista_correos = crudCo.getPersonMail(cedula);
         correo.removeAllItems();
         correo.addItem("Elija una Opción...");
-        for (int i = 0; i < lista_correos.size(); i++) {
-            correo.addItem(lista_correos.get(i).getCorreo());
+
+        for (Correo c : lista_correos) {
+            correo.addItem(c.getCorreo());
+        }
+
+        if (correoSeleccionado != null) {
+            correo.setSelectedItem(correoSeleccionado);
         }
     }
 
@@ -1846,12 +1871,15 @@ public class Fichas extends javax.swing.JDialog {
         } else {
             gbr_persona++;
             if (gbr_persona == 1) {
-                // btn_validar_datos.setEnabled(false);
-                // Dialogo.Mensaje("Validado", 90);
-                grabar();
+                grabar(); // ← Aquí ya se guarda la persona (y su cédula)
+
+                // 👇 Luego puedes guardar correos NUEVOS (si los hay)
+                if (!correos.isEmpty()) {
+                    insertNews(TXT_CEDULA.getText(), correos, this.objU);
+                }
+
                 antecedentes.setEnabledAt(1, true);
                 antecedentes.setEnabledAt(2, true);
-                //activar(false);
             }
 
             if (gbr_persona > 1) {
@@ -1863,6 +1891,15 @@ public class Fichas extends javax.swing.JDialog {
 
         }
     }//GEN-LAST:event_btn_validar_datosActionPerformed
+
+    private void insertNews(String cedula, List<String> correos, Usuario objU) {
+        CrudCorreo crudCorreo = new CrudCorreo();
+        for (String c : correos) {
+            Correo correo = new Correo(c, cedula, objU.getUsuario(), "A");
+            crudCorreo.save(correo); // o .saveNews si manejas varios a la vez
+        }
+    }
+
     /* Metodo grabar
     20/02/2025
     Hora:9:35 am
@@ -2139,10 +2176,26 @@ public class Fichas extends javax.swing.JDialog {
     }//GEN-LAST:event_TXT_E_ACTUALKeyReleased
 
     private void btn_correoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_correoActionPerformed
-        new NewMail(new JFrame(), true, TXT_CEDULA.getText(), this.objU).setVisible(true);
-        fillCorreo();
-    }//GEN-LAST:event_btn_correoActionPerformed
+        NewMail dialog = new NewMail(new JFrame(), true, TXT_CEDULA.getText(), this.objU);
+        dialog.setVisible(true);
 
+        List<String> nuevos = dialog.getCorreosAgregados(); // AHORA este método ya existe
+
+        if (nuevos != null && !nuevos.isEmpty()) {
+            correos.addAll(nuevos); // Acumulas para guardar al final
+            String ultimo = nuevos.get(nuevos.size() - 1);
+            fillCorreo(ultimo); // actualiza combo y selecciona el nuevo
+        } else {
+            fillCorreo(null);
+        }
+    }//GEN-LAST:event_btn_correoActionPerformed
+    private void actualizarComboCorreos() {
+        correo.removeAllItems();
+        correo.addItem("Elija una opción...");
+        for (String c : correos) {
+            correo.addItem(c);
+        }
+    }
     private void DIASTOLICAKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_DIASTOLICAKeyTyped
         char car = evt.getKeyChar();
         if (DIASTOLICA.getText().length() == 3) {

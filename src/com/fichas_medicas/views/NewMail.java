@@ -7,6 +7,7 @@ package com.fichas_medicas.views;
 import com.fichas_medicas.components.Cadenas;
 import com.fichas_medicas.components.TablasCorreo;
 import com.fichas_medicas.dao.CrudCorreo;
+import com.fichas_medicas.dao.CrudPersona;
 import com.fichas_medicas.domain.Correo;
 import com.fichas_medicas.domain.Usuario;
 import java.util.ArrayList;
@@ -24,6 +25,12 @@ public class NewMail extends javax.swing.JDialog {
     private String id_persona;
     private Usuario objU = null;
     private CrudCorreo crudC = null;
+    private String correoAgregado = null;
+    private CrudPersona crudP = null;
+
+    public String getCorreoAgregado() {
+        return correoAgregado;
+    }
 
     /**
      * Creates new form NewMail
@@ -31,6 +38,8 @@ public class NewMail extends javax.swing.JDialog {
     public NewMail(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
+        crudP = new CrudPersona();
+        correos = new ArrayList<>();
         setLocationRelativeTo(null);
         correos = new ArrayList<>();
         tbC = new TablasCorreo();
@@ -41,10 +50,12 @@ public class NewMail extends javax.swing.JDialog {
         super(parent, modal);
         initComponents();
         setLocationRelativeTo(null);
+        crudP = new CrudPersona();
+        correos = new ArrayList<>();
         this.objU = obj;
-        System.out.println("Usuario fichas "+objU.getUsuario());
+        System.out.println("Usuario fichas " + objU.getUsuario());
         this.id_persona = id_persona;
-        crudC= new CrudCorreo();
+        crudC = new CrudCorreo();
         correos = new ArrayList<>();
         tbC = new TablasCorreo();
         tbC.cargarCorreosNuevos(correos, tabla);
@@ -201,30 +212,39 @@ public class NewMail extends javax.swing.JDialog {
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         guardar();
     }//GEN-LAST:event_jButton1ActionPerformed
+    public List<String> getCorreosAgregados() {
+        return this.correos;
+    }
 
     private void guardar() {
-        insertNews(this.id_persona, correos, objU);
+    if (!correos.isEmpty()) {
+        insertNews(id_persona, correos, this.objU);  // Aquí usa la lista de correos agregados
+        this.dispose();  // Cierra la ventana
+    } else {
+        JOptionPane.showMessageDialog(this, "Debe ingresar al menos un correo.");
     }
+}
+
+
+
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+         String nuevoCorreo = correo.getText().trim();
 
-        var res = Cadenas.validateEmail(correo.getText());
-
-        if (res != null) {
-            var res1 = validar(correo.getText());
-            System.out.println(res1);
-            if (res1 == false) {
-                correos.add(correo.getText());
+    if (!nuevoCorreo.isEmpty()) {
+        if (Cadenas.validateEmail(nuevoCorreo) != null) {
+            if (!correos.contains(nuevoCorreo)) {
+                correos.add(nuevoCorreo);
                 tbC.cargarCorreosNuevos(correos, tabla);
-
                 correo.setText("");
             } else {
-                JOptionPane.showMessageDialog(null, "Correo ya existe!");
-                correo.setText("");
+                JOptionPane.showMessageDialog(this, "Correo ya existe!");
             }
-
         } else {
-            JOptionPane.showMessageDialog(null, "Correo invalido!");
+            JOptionPane.showMessageDialog(this, "Correo inválido!");
         }
+    } else {
+        JOptionPane.showMessageDialog(this, "Debe ingresar un correo.");
+    }
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
@@ -248,15 +268,24 @@ public class NewMail extends javax.swing.JDialog {
     }
 
     private String insertNews(String id_persona, List<String> lista, Usuario obj) {
+        if (id_persona == null || id_persona.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(null, "No se puede guardar: cédula vacía.");
+            return "Cédula vacía";
+        }
+
+        if (crudP.getOne(id_persona) == null) {
+            JOptionPane.showMessageDialog(null, "La cédula no existe en la base de datos. Registre al paciente primero.");
+            return "Cédula no registrada";
+        }
+
         List<Correo> lista_correo = new ArrayList<>();
-        for (int i = 0; i < lista.size(); i++) {
-                 System.out.println("Usuario fichas - lista "+objU.getUsuario());
-            Correo obC = new Correo(lista.get(i), id_persona, obj.getUsuario(), "A");
+        for (String correo : lista) {
+            Correo obC = new Correo(correo, id_persona, obj.getUsuario(), "A");
             lista_correo.add(obC);
         }
-        var res = crudC.saveNews(lista_correo);
-        System.out.println(" prueba grabar " + res);
-        return null;
+
+        boolean res = crudC.saveNews(lista_correo);
+        return res ? "Correos guardados" : "Error al guardar correos";
     }
 
     /**

@@ -30,24 +30,12 @@ public class Cadenas {
         return input; // Devolver la cadena válida
     }
     
-     public static String validateEmail(String input) {
-        if (input == null || input.isEmpty()) {
-            return null;
-        }
-
-        // Eliminar espacios al inicio
-        String trimmedInput = input.stripLeading();
-
-        // Expresión regular para validar correo electrónico
-        String emailRegex = "^[\\w.-]+@[a-zA-Z\\d.-]+\\.[a-zA-Z]{2,6}$";
-        Pattern pattern = Pattern.compile(emailRegex);
-        Matcher matcher = pattern.matcher(trimmedInput);
-
-        if (matcher.matches()) {
-            return "Correo válido: " + trimmedInput;
-        } else {
-            return null;
-        }
+public static String validateEmail(String correo) {
+    String regex = "^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$";
+    if (correo.matches(regex)) {
+        return correo;
     }
+    return null;
+}
     
 }

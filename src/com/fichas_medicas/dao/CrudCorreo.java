@@ -194,4 +194,29 @@ public class CrudCorreo implements CorreoDAO {
         return false;
     }
 
+    public boolean personaExiste(String cedula) {
+        String query = "SELECT 1 FROM persona WHERE cedula = ?";
+        try (Connection conn = conexion.conectar(base); PreparedStatement st = conn.prepareStatement(query)) {
+            st.setString(1, cedula);
+            ResultSet rs = st.executeQuery();
+            return rs.next(); // true si encontró la persona
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean existeCorreo(String correo, String idPersona) {
+        String query = "SELECT * FROM correo WHERE correo = ? AND id_persona = ? AND estado = 'A'";
+        try (Connection conn = conexion.conectar(base); PreparedStatement st = conn.prepareStatement(query)) {
+            st.setString(1, correo);
+            st.setString(2, idPersona);
+            ResultSet rs = st.executeQuery();
+            return rs.next();
+        } catch (SQLException ex) {
+            Logger.getLogger(CrudCorreo.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return false;
+    }
+
 }
