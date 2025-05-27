@@ -41,8 +41,8 @@ import java.awt.Color;
 import java.util.ArrayList;
 
 /**
- *
- * @Corregido 14 : 01 2025 cambio final
+ *   Ing. Jose Luis Tapia
+ * @Corregido 26: mayo  2025 cambio final
  */
 public class EditarFichas extends javax.swing.JDialog {
 
